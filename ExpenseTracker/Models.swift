@@ -17,9 +17,10 @@ class Transaction {
     var recurrenceType: RecurrenceType
     var numberOfInstallments: Int? // nil para infinito
     @Relationship(deleteRule: .nullify) var category: Category?
+    @Relationship(deleteRule: .nullify) var account: Account?
     @Relationship(deleteRule: .cascade) var adjustments: [TransactionAdjustment] = [] // Ajustes de valor
     
-    init(title: String, initialBaseAmount: Double, date: Date, isRecurring: Bool, recurrenceType: RecurrenceType, numberOfInstallments: Int?, category: Category?) {
+    init(title: String, initialBaseAmount: Double, date: Date, isRecurring: Bool, recurrenceType: RecurrenceType, numberOfInstallments: Int?, category: Category?, account: Account?) {
         self.title = title
         self.initialBaseAmount = initialBaseAmount
         self.date = date
@@ -27,6 +28,7 @@ class Transaction {
         self.recurrenceType = recurrenceType
         self.numberOfInstallments = numberOfInstallments
         self.category = category
+        self.account = account
     }
     
     // Calcula ocorrências para o mês considerando ajustes
@@ -107,6 +109,16 @@ class TransactionAdjustment {
 
 @Model
 class Category {
+    var id: UUID = UUID()
+    var name: String
+    
+    init(name: String) {
+        self.name = name
+    }
+}
+
+@Model
+class Account {
     var id: UUID = UUID()
     var name: String
     

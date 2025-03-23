@@ -5,14 +5,15 @@ struct MonthlyFilterView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var transactions: [Transaction]
     @Query private var categories: [Category] // Para o filtro de categorias
+    @Query private var accounts: [Account]
     
     @State private var selectedDate = Date()
-    @State private var selectedType: TransactionTypeFilter = .all // Filtro de tipo
+    @State private var selectedType: TransactionTypeFilter? = nil // Filtro de tipo
     @State private var selectedCategory: Category? = nil // Filtro de categoria
+    @State private var selectedAccount: Account? = nil
     
     // Enum para o filtro de tipo
     enum TransactionTypeFilter: String, CaseIterable, Identifiable {
-        case all = "All"
         case income = "Income"
         case expense = "Expense"
         
@@ -33,18 +34,22 @@ struct MonthlyFilterView: View {
         // Aplica filtro de tipo
         occurrences = occurrences.filter { occurrence in
             switch selectedType {
-            case .all:
-                return true
             case .income:
                 return occurrence.2 >= 0
             case .expense:
                 return occurrence.2 < 0
+            case .none:
+                return true
             }
         }
         
         // Aplica filtro de categoria
         if let category = selectedCategory {
             occurrences = occurrences.filter { $0.0.category == category }
+        }
+        
+        if let account = selectedAccount {
+            occurrences = occurrences.filter { $0.0.account == account }
         }
         
         return occurrences
@@ -67,20 +72,22 @@ struct MonthlyFilterView: View {
                 
                 // Filtros
                 HStack(spacing: 20) {
-                    // Filtro de Tipo
-                    HStack(spacing: 8) {
-                        FilterButton(title: "All", isSelected: selectedType == .all) {
-                            selectedType = .all
+                    Menu {
+                        Button("All") { selectedType = nil }
+                        Button("Income") { selectedType = .income }
+                        Button("Expense") { selectedType = .expense }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(selectedType?.rawValue ?? "Tipo" )
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .foregroundStyle(.gray)
                         }
-                        FilterButton(title: "Income", isSelected: selectedType == .income) {
-                            selectedType = .income
-                        }
-                        FilterButton(title: "Expense", isSelected: selectedType == .expense) {
-                            selectedType = .expense
-                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
                     }
-                    
-                    Spacer()
                     
                     // Filtro de Categoria
                     Menu {
@@ -91,6 +98,24 @@ struct MonthlyFilterView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Text(selectedCategory?.name ?? "Category")
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .foregroundStyle(.gray)
+                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                    }
+                    
+                    Menu {
+                        Button("All") { selectedAccount = nil }
+                        ForEach(accounts) { account in
+                            Button(account.name) { selectedAccount = account }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(selectedAccount?.name ?? "Account")
                                 .font(.subheadline)
                                 .foregroundStyle(.primary)
                             Image(systemName: "chevron.down")
@@ -138,23 +163,4 @@ struct MonthlyFilterView: View {
 #Preview {
     MonthlyFilterView()
         .modelContainer(for: [Transaction.self, Category.self, TransactionAdjustment.self], inMemory: true)
-}
-
-// Componente auxiliar para botões de filtro
-struct FilterButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(isSelected ? .blue : .gray)
-                .padding(.vertical, 4)
-                .padding(.horizontal, 8)
-                .background(isSelected ? Color.blue.opacity(0.1) : Color.clear)
-                .cornerRadius(6)
-        }
-    }
 }

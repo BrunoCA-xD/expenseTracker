@@ -5,6 +5,7 @@ struct AddTransactionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) var dismiss
     @Query private var categories: [Category]
+    @Query private var accounts: [Account]
     
     @State private var title = ""
     @State private var initialBaseAmount: Double = 0.0
@@ -14,8 +15,11 @@ struct AddTransactionView: View {
     @State private var recurrenceType = RecurrenceType.monthly
     @State private var numberOfInstallments = ""
     @State private var selectedCategory: Category? // Opcional, pode ser nil
+    @State private var selectedAccount: Account? // Novo campo para conta
     @State private var newCategoryName = ""
+    @State private var newAccountName = ""
     @State private var showingAddCategory = false
+    @State private var showingAddAccount = false
     @State private var refreshTrigger = UUID() // Força atualização da view
     
     private var finalInitialBaseAmount: Double? {
@@ -63,6 +67,18 @@ struct AddTransactionView: View {
                         showingAddCategory = true
                     }
                 }
+                
+                Section("Account") {
+                    Picker("Account", selection: $selectedAccount) {
+                        Text("None").tag(nil as Account?)
+                        ForEach(accounts) { account in
+                            Text(account.name).tag(account as Account?)
+                        }
+                    }
+                    Button("Add New Account") {
+                        showingAddAccount = true
+                    }
+                }
             }
             .navigationTitle("Add Transaction")
             .toolbar {
@@ -87,6 +103,17 @@ struct AddTransactionView: View {
                         showingAddCategory = false
                     }
                 })
+            }.sheet(isPresented: $showingAddAccount) {
+                AddAccountView(newAccountName: $newAccountName, onSave: {
+                    if !newAccountName.isEmpty {
+                        let newAccount = Account(name: newAccountName)
+                        modelContext.insert(newAccount)
+                        selectedAccount = newAccount
+                        newAccountName = ""
+                        showingAddAccount = false
+                        refreshTrigger = UUID()
+                    }
+                })
             }
         }
     }
@@ -102,7 +129,8 @@ struct AddTransactionView: View {
             isRecurring: isRecurring,
             recurrenceType: isRecurring ? recurrenceType : .none,
             numberOfInstallments: installments,
-            category: selectedCategory
+            category: selectedCategory,
+            account: selectedAccount
         )
         modelContext.insert(newTransaction)
         try? modelContext.save()
@@ -134,6 +162,33 @@ struct AddCategoryView: View {
                         dismiss()
                     }
                     .disabled(newCategoryName.isEmpty)
+                }
+            }
+        }
+    }
+}
+
+struct AddAccountView: View {
+    @Binding var newAccountName: String
+    let onSave: () -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Account Name", text: $newAccountName)
+            }
+            .navigationTitle("New Account")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        onSave()
+                        dismiss()
+                    }
+                    .disabled(newAccountName.isEmpty)
                 }
             }
         }

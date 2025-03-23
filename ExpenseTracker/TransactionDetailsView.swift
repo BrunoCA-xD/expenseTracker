@@ -23,6 +23,9 @@ struct TransactionDetailView: View {
                 if let category = transaction.category {
                     Text("Category: \(category.name)")
                 }
+                if let account = transaction.account {
+                    Text("Account: \(account.name)")
+                }
             }
             
             if transaction.isRecurring {

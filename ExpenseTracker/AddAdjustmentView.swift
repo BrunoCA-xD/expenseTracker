@@ -57,7 +57,9 @@ struct AddAdjustmentView: View {
         isRecurring: true,
         recurrenceType: .monthly,
         numberOfInstallments: nil,
-        category: nil
+        category: nil,
+        account: nil
+        
     ))
     .modelContainer(for: [Transaction.self, TransactionAdjustment.self], inMemory: true)
 }
