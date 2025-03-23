@@ -30,7 +30,14 @@ struct AddTransactionView: View {
                     TextField("Title", text: $title)
                     TextField("Initial Base Amount", text: $initialBaseAmount)
                         .keyboardType(.decimalPad)
-                    Toggle("Is Income", isOn: $isIncome)
+                    HStack {
+                        Text("Type")
+                        Spacer()
+                        Picker("Type", selection: $isIncome) {
+                            Text("Outcome").tag(false)
+                            Text("Income").tag(true)
+                        }.pickerStyle(SegmentedPickerStyle())
+                    }
                     DatePicker("Start Date", selection: $date, displayedComponents: .date)
                 }
                 
