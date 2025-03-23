@@ -39,22 +39,24 @@ struct MonthlyFilterView: View {
                     .padding()
                 
                 List(filteredOccurrences, id: \.date) { occurrence in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(occurrence.transaction.title)
-                                .font(.headline)
-                            Text(occurrence.date, style: .date)
-                                .font(.subheadline)
-                                .foregroundStyle(.gray)
-                            if let category = occurrence.transaction.category {
-                                Text(category.name)
-                                    .font(.caption)
-                                    .foregroundStyle(.blue)
+                    NavigationLink(destination: TransactionDetailView(transaction: occurrence.transaction)) {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(occurrence.transaction.title)
+                                    .font(.headline)
+                                Text(occurrence.date, style: .date)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.gray)
+                                if let category = occurrence.transaction.category {
+                                    Text(category.name)
+                                        .font(.caption)
+                                        .foregroundStyle(.blue)
+                                }
                             }
+                            Spacer()
+                            Text("\(occurrence.amount, specifier: "%.2f")")
+                                .foregroundStyle(occurrence.amount >= 0 ? .green : .red)
                         }
-                        Spacer()
-                        Text("\(occurrence.amount, specifier: "%.2f")")
-                            .foregroundStyle(occurrence.amount >= 0 ? .green : .red)
                     }
                 }
             }

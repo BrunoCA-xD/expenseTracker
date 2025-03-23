@@ -81,20 +81,13 @@ class Transaction {
         let calendar = Calendar.current
         let sortedAdjustments = adjustments.sorted { $0.startDate < $1.startDate }
         
-        // Encontra o último ajuste permanente antes da data
-        if let lastPermanent = sortedAdjustments.last(where: { $0.startDate <= date && $0.isPermanent }) {
-            // Verifica se há um ajuste pontual para essa data exata
-            if let oneTime = sortedAdjustments.first(where: { calendar.isDate($0.startDate, equalTo: date, toGranularity: .day) && !$0.isPermanent }) {
-                return oneTime.amount
-            }
-            return lastPermanent.amount
-        }
-        
-        // Se não há ajuste permanente, usa o initialBaseAmount
-        if let oneTime = sortedAdjustments.first(where: { calendar.isDate($0.startDate, equalTo: date, toGranularity: .day) && !$0.isPermanent }) {
+        if let oneTime = sortedAdjustments.first(where: { calendar.isDate($0.startDate, equalTo: date, toGranularity: .month) && !$0.isPermanent }) {
             return oneTime.amount
+        } else if let lastPermanent = sortedAdjustments.last(where: { $0.startDate <= date && $0.isPermanent }) {
+            return lastPermanent.amount
+        } else {
+            return initialBaseAmount
         }
-        return initialBaseAmount
     }
 }
 
