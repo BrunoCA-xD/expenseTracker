@@ -114,6 +114,8 @@ struct TransactionDetailView: View {
                     TextField("New Amount", text: $newAmount)
                         .keyboardType(.decimalPad)
                     Toggle("Permanent Change", isOn: $isPermanent)
+                }
+                Section {
                     Button("Save Adjustment") {
                         if let amount = Double(newAmount) {
                             let adjustment = TransactionAdjustment(startDate: selectedDate, amount: amount, isPermanent: isPermanent)
