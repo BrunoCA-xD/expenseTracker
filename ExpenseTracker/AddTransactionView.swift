@@ -7,7 +7,7 @@ struct AddTransactionView: View {
     @Query private var categories: [Category]
     
     @State private var title = ""
-    @State private var initialBaseAmount = ""
+    @State private var initialBaseAmount: Double = 0.0
     @State private var isIncome = false
     @State private var date = Date()
     @State private var isRecurring = false
@@ -19,8 +19,8 @@ struct AddTransactionView: View {
     @State private var refreshTrigger = UUID() // Força atualização da view
     
     private var finalInitialBaseAmount: Double? {
-        guard let value = Double(initialBaseAmount) else { return nil }
-        return isIncome ? value : -value
+        let value = isIncome ? initialBaseAmount : -initialBaseAmount
+        return value != 0.0 ? value : nil
     }
     
     var body: some View {
@@ -28,8 +28,7 @@ struct AddTransactionView: View {
             Form {
                 Section("Transaction Details") {
                     TextField("Title", text: $title)
-                    TextField("Initial Base Amount", text: $initialBaseAmount)
-                        .keyboardType(.decimalPad)
+                    CurrencyTextField(value: $initialBaseAmount)
                     HStack {
                         Text("Type")
                         Spacer()
@@ -110,7 +109,7 @@ struct AddTransactionView: View {
     }
     
     private func isValid() -> Bool {
-        !title.isEmpty && Double(initialBaseAmount) != nil && (!isRecurring || numberOfInstallments.isEmpty || Int(numberOfInstallments) != nil)
+        !title.isEmpty && initialBaseAmount != 0 && (!isRecurring || numberOfInstallments.isEmpty || Int(numberOfInstallments) != nil)
     }
 }
 
