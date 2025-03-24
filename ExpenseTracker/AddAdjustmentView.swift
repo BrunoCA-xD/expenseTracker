@@ -57,6 +57,7 @@ struct AddAdjustmentView: View {
         isRecurring: true,
         recurrenceType: .monthly,
         numberOfInstallments: nil,
+        endDate: nil,
         category: nil,
         account: nil
         

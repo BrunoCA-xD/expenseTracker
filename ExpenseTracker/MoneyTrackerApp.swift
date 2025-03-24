@@ -5,8 +5,8 @@ import SwiftData
 struct MoneyTrackerApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .modelContainer(for: [Transaction.self, Category.self])
+            MonthlyFilterView()
+                .modelContainer(for: [Transaction.self, Category.self, Account.self, TransactionAdjustment.self])
         }
     }
 }

@@ -129,6 +129,7 @@ struct AddTransactionView: View {
             isRecurring: isRecurring,
             recurrenceType: isRecurring ? recurrenceType : .none,
             numberOfInstallments: installments,
+            endDate: nil,
             category: selectedCategory,
             account: selectedAccount
         )

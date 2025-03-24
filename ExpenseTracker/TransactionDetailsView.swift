@@ -3,12 +3,18 @@ import SwiftData
 
 struct TransactionDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) var dismiss
     let transaction: Transaction
-    @State private var showingEditAdjustment = false
-    @State private var selectedDate = Date()
-    @State private var newAmount: Double = 0.0
-    @State private var isPermanent = false
     @State private var showingAddAdjustment = false
+    @State private var hasEndDate: Bool // Reflete se há endDate
+    @State private var endDate: Date
+    @State private var showingDeleteConfirmation = false
+    
+    init(transaction: Transaction) {
+        self.transaction = transaction
+        self._hasEndDate = State(initialValue: transaction.endDate != nil)
+        self._endDate = State(initialValue: transaction.endDate ?? Date())
+    }
     
     var body: some View {
         Form {
@@ -29,6 +35,18 @@ struct TransactionDetailView: View {
             }
             
             if transaction.isRecurring {
+                Section("Recurrence Options") {
+                    Toggle("Set End Date", isOn: $hasEndDate)
+                    if hasEndDate {
+                        DatePicker("End Date", selection: $endDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                    }
+                    Button("Save End Date") {
+                        transaction.endDate = hasEndDate ? endDate : nil
+                        try? modelContext.save()
+                    }
+                }
+                
                 Section("Adjustments") {
                     if transaction.adjustments.isEmpty {
                         Text("No adjustments yet.")
@@ -50,11 +68,33 @@ struct TransactionDetailView: View {
                     }
                 }
             }
+            Section {
+                Button("Delete Transaction") {
+                    showingDeleteConfirmation = true
+                }
+                .foregroundStyle(.red)
+            }
         }
         .navigationTitle("Transaction Details")
         .sheet(isPresented: $showingAddAdjustment) {
             AddAdjustmentView(transaction: transaction)
         }
+        .confirmationDialog(
+            "Delete Transaction",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                modelContext.delete(transaction)
+                try? modelContext.save()
+                dismiss() // Fecha a view após o feedback
+            }
+        } message: {
+            Text(transaction.isRecurring ?
+                 "Are you sure you want to delete '\(transaction.title)'? This is a recurring transaction and will remove all future occurrences." :
+                    "Are you sure you want to delete '\(transaction.title)'?")
+        }
+        
     }
     
     private func deleteAdjustment(at offsets: IndexSet) {

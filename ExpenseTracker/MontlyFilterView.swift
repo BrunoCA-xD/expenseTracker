@@ -11,6 +11,7 @@ struct MonthlyFilterView: View {
     @State private var selectedType: TransactionTypeFilter? = nil // Filtro de tipo
     @State private var selectedCategory: Category? = nil // Filtro de categoria
     @State private var selectedAccount: Account? = nil
+    @State private var showingAddTransaction = false
     
     // Enum para o filtro de tipo
     enum TransactionTypeFilter: String, CaseIterable, Identifiable {
@@ -135,27 +136,33 @@ struct MonthlyFilterView: View {
                 
                 List(filteredOccurrences, id: \.date) { occurrence in
                     NavigationLink(destination: TransactionDetailView(transaction: occurrence.transaction)) {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(occurrence.transaction.title)
-                                    .font(.headline)
-                                Text(occurrence.date, style: .date)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.gray)
-                                if let category = occurrence.transaction.category {
-                                    Text(category.name)
-                                        .font(.caption)
-                                        .foregroundStyle(.blue)
-                                }
+                        VStack(alignment: .leading) {
+                            Text(occurrence.transaction.title)
+                                .font(.headline)
+                            Text(occurrence.date, style: .date)
+                                .font(.subheadline)
+                                .foregroundStyle(.gray)
+                            if let category = occurrence.transaction.category {
+                                Text(category.name)
+                                    .font(.caption)
+                                    .foregroundStyle(.blue)
                             }
-                            Spacer()
-                            Text("\(occurrence.amount, specifier: "%.2f")")
-                                .foregroundStyle(occurrence.amount >= 0 ? .green : .red)
                         }
                     }
                 }
+                .listStyle(.plain)
             }
-            .navigationTitle("Monthly Balance")
+            .navigationTitle("Money Tracker")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: { showingAddTransaction = true }) {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingAddTransaction) {
+                AddTransactionView()
+            }
         }
     }
 }

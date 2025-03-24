@@ -16,17 +16,19 @@ class Transaction {
     var isRecurring: Bool
     var recurrenceType: RecurrenceType
     var numberOfInstallments: Int? // nil para infinito
+    var endDate: Date?
     @Relationship(deleteRule: .nullify) var category: Category?
     @Relationship(deleteRule: .nullify) var account: Account?
     @Relationship(deleteRule: .cascade) var adjustments: [TransactionAdjustment] = [] // Ajustes de valor
     
-    init(title: String, initialBaseAmount: Double, date: Date, isRecurring: Bool, recurrenceType: RecurrenceType, numberOfInstallments: Int?, category: Category?, account: Account?) {
+    init(title: String, initialBaseAmount: Double, date: Date, isRecurring: Bool, recurrenceType: RecurrenceType, numberOfInstallments: Int?, endDate: Date?, category: Category?, account: Account?) {
         self.title = title
         self.initialBaseAmount = initialBaseAmount
         self.date = date
         self.isRecurring = isRecurring
         self.recurrenceType = recurrenceType
         self.numberOfInstallments = numberOfInstallments
+        self.endDate = endDate
         self.category = category
         self.account = account
     }
@@ -50,6 +52,10 @@ class Transaction {
         var occurrenceCount = 0
         
         while occurrenceCount < maxOccurrences {
+            if let end = endDate, currentDate > end {
+                break
+            }
+            
             let components = calendar.dateComponents([.month, .year], from: currentDate)
             guard let occurrenceMonth = components.month, let occurrenceYear = components.year else { break }
             
