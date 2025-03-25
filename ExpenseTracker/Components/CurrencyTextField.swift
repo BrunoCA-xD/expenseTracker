@@ -1,15 +1,9 @@
-//
-//  CurrencyTextField.swift
-//  ExpenseTracker
-//
-//  Created by Bruno Ambrosio on 23/03/25.
-//
-
 import SwiftUI
 
 struct CurrencyTextField: View {
     @Binding var value: Double // Valor numérico real, pode ser positivo ou negativo
     @State private var text: String // Texto formatado exibido
+    private let placeholder: String? // Novo parâmetro opcional
     
     // Formatter para moeda
     private let currencyFormatter: NumberFormatter = {
@@ -22,14 +16,15 @@ struct CurrencyTextField: View {
         return formatter
     }()
     
-    init(value: Binding<Double>) {
+    init(value: Binding<Double>, _ placeholder: String? = nil) {
         self._value = value
+        self.placeholder = placeholder
         let initialValue = value.wrappedValue
         self._text = State(initialValue: initialValue != 0 ? currencyFormatter.string(from: NSNumber(value: initialValue)) ?? "" : "")
     }
     
     var body: some View {
-        TextField("Amount (R$)", text: $text)
+        TextField(placeholder ?? "Amount (R$)", text: $text)
             .keyboardType(.decimalPad)
             .onChange(of: text) { _, newValue in
                 updateValue(from: newValue)
@@ -58,5 +53,5 @@ struct CurrencyTextField: View {
 }
 
 #Preview {
-    CurrencyTextField(value: .constant(-1234.56))
+    CurrencyTextField(value: .constant(-1234.56), "Enter Value")
 }
