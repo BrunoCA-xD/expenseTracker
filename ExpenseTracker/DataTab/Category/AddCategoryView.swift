@@ -19,7 +19,7 @@ struct AddCategoryView: View {
         NavigationStack {
             Form {
                 TextField("Category Name", text: $newCategoryName)
-                CurrencyTextField(value: $estimatedMonthlyAmount, "Monthly Estimate (R$)")
+                CurrencyTextField("Monthly Estimate (R$)", value: $estimatedMonthlyAmount)
             }
             .navigationTitle("New Category")
             .toolbar {

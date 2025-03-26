@@ -16,7 +16,7 @@ struct CurrencyTextField: View {
         return formatter
     }()
     
-    init(value: Binding<Double>, _ placeholder: String? = nil) {
+    init(_ placeholder: String? = nil, value: Binding<Double>) {
         self._value = value
         self.placeholder = placeholder
         let initialValue = value.wrappedValue
@@ -53,5 +53,5 @@ struct CurrencyTextField: View {
 }
 
 #Preview {
-    CurrencyTextField(value: .constant(-1234.56), "Enter Value")
+    CurrencyTextField("Enter value", value: .constant(-1234.56))
 }

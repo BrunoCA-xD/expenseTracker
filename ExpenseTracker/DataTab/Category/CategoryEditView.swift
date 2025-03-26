@@ -47,7 +47,7 @@ struct CategoryEditView: View {
                         Text("Income").tag(true)
                     }.pickerStyle(SegmentedPickerStyle())
                 }
-                CurrencyTextField(value: $newEstimateAmount, "Estimate Amount (R$)")
+                CurrencyTextField("Estimate Amount (R$)", value: $newEstimateAmount)
                 DatePicker("Month", selection: $newEstimateDate, displayedComponents: .date)
                 Button("Add Estimate") {
                     let newEstimate = CategoryEstimate(date: newEstimateDate, amount: finalEstimateAmount)
