@@ -56,8 +56,21 @@ struct MonthlyFilterView: View {
         return occurrences
     }
     
-    private var monthlyBalance: Double {
+    private var realBalance: Double {
         filteredOccurrences.reduce(0) { $0 + $1.amount }
+    }
+    
+    private var estimatedBalance: Double {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.month, .year], from: selectedDate)
+        let month = components.month!
+        let year = components.year!
+        
+        return categories.reduce(0) { $0 + ($1.estimateForMonth(month: month, year: year) ?? 0) }
+    }
+    
+    private var totalBalance: Double {
+        realBalance + estimatedBalance
     }
     
     private var monthYearString: String {
@@ -129,24 +142,42 @@ struct MonthlyFilterView: View {
                 }
                 .padding(.horizontal)
                 
-                Text("Balance for \(monthYearString): \(monthlyBalance, specifier: "%.2f")")
-                    .font(.headline)
-                    .foregroundStyle(monthlyBalance >= 0 ? .green : .red)
-                    .padding()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Total Balance for \(monthYearString): \(totalBalance, specifier: "%.2f")")
+                        .font(.headline)
+                        .foregroundStyle(totalBalance >= 0 ? .green : .red)
+                    Text("Real Balance: \(realBalance, specifier: "%.2f")")
+                        .font(.subheadline)
+                        .foregroundStyle(.gray)
+                    Text("Estimated Balance: \(estimatedBalance, specifier: "%.2f")")
+                        .font(.subheadline)
+                        .foregroundStyle(.gray)
+                }
+                .padding(.horizontal)
                 
                 List(filteredOccurrences, id: \.date) { occurrence in
                     NavigationLink(destination: TransactionDetailView(transaction: occurrence.transaction)) {
-                        VStack(alignment: .leading) {
-                            Text(occurrence.transaction.title)
-                                .font(.headline)
-                            Text(occurrence.date, style: .date)
-                                .font(.subheadline)
-                                .foregroundStyle(.gray)
-                            if let category = occurrence.transaction.category {
-                                Text(category.name)
-                                    .font(.caption)
-                                    .foregroundStyle(.blue)
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(occurrence.transaction.title)
+                                    .font(.headline)
+                                Text(occurrence.date, style: .date)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.gray)
+                                if let category = occurrence.transaction.category {
+                                    Text(category.name)
+                                        .font(.caption)
+                                        .foregroundStyle(.blue)
+                                }
+                                if let account = occurrence.transaction.account {
+                                    Text(account.name)
+                                        .font(.caption)
+                                        .foregroundStyle(.purple)
+                                }
                             }
+                            Spacer()
+                            Text("\(occurrence.amount, specifier: "%.2f")")
+                                .foregroundStyle(occurrence.amount >= 0 ? .green : .red)
                         }
                     }
                 }
@@ -169,5 +200,5 @@ struct MonthlyFilterView: View {
 
 #Preview {
     MonthlyFilterView()
-        .modelContainer(for: [Transaction.self, Category.self, TransactionAdjustment.self], inMemory: true)
+        .modelContainer(for: [Transaction.self, Category.self, Account.self, TransactionAdjustment.self, CategoryEstimate.self], inMemory: true)
 }

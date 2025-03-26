@@ -16,6 +16,7 @@ struct AddTransactionView: View {
     @State private var numberOfInstallments = ""
     @State private var selectedCategory: Category? // Opcional, pode ser nil
     @State private var selectedAccount: Account? // Novo campo para conta
+    @State private var estimatedMonthlyAmount: Double = 0.0
     @State private var newCategoryName = ""
     @State private var newAccountName = ""
     @State private var showingAddCategory = false
@@ -94,26 +95,14 @@ struct AddTransactionView: View {
                 }
             }
             .sheet(isPresented: $showingAddCategory) {
-                AddCategoryView(newCategoryName: $newCategoryName, onSave: {
-                    if !newCategoryName.isEmpty {
-                        let newCategory = Category(name: newCategoryName)
-                        modelContext.insert(newCategory)
-                        selectedCategory = newCategory
-                        newCategoryName = ""
-                        showingAddCategory = false
-                    }
-                })
-            }.sheet(isPresented: $showingAddAccount) {
-                AddAccountView(newAccountName: $newAccountName, onSave: {
-                    if !newAccountName.isEmpty {
-                        let newAccount = Account(name: newAccountName)
-                        modelContext.insert(newAccount)
-                        selectedAccount = newAccount
-                        newAccountName = ""
-                        showingAddAccount = false
-                        refreshTrigger = UUID()
-                    }
-                })
+                AddCategoryView(date: date) { newCategory in
+                    selectedCategory = newCategory // Seleciona a nova categoria
+                }
+            }
+            .sheet(isPresented: $showingAddAccount) {
+                AddAccountView { newAccount in
+                    selectedAccount = newAccount // Seleciona a nova conta
+                }
             }
         }
     }
@@ -142,61 +131,7 @@ struct AddTransactionView: View {
     }
 }
 
-struct AddCategoryView: View {
-    @Binding var newCategoryName: String
-    let onSave: () -> Void
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Category Name", text: $newCategoryName)
-            }
-            .navigationTitle("New Category")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
-                        onSave()
-                        dismiss()
-                    }
-                    .disabled(newCategoryName.isEmpty)
-                }
-            }
-        }
-    }
-}
-
-struct AddAccountView: View {
-    @Binding var newAccountName: String
-    let onSave: () -> Void
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Account Name", text: $newAccountName)
-            }
-            .navigationTitle("New Account")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
-                        onSave()
-                        dismiss()
-                    }
-                    .disabled(newAccountName.isEmpty)
-                }
-            }
-        }
-    }
-}
-
 #Preview {
     AddTransactionView()
-        .modelContainer(for: [Transaction.self, Category.self, TransactionAdjustment.self], inMemory: true)
+        .modelContainer(for: [Transaction.self, Category.self, Account.self, TransactionAdjustment.self, CategoryEstimate.self], inMemory: true)
 }

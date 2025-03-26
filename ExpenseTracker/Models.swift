@@ -117,9 +117,29 @@ class TransactionAdjustment {
 class Category {
     var id: UUID = UUID()
     var name: String
+    @Relationship(deleteRule: .cascade) var estimates: [CategoryEstimate] = [] // Estimativas por mês
     
     init(name: String) {
         self.name = name
+    }
+    
+    func estimateForMonth(month: Int, year: Int) -> Double? {
+        estimates.first { estimate in
+            let components = Calendar.current.dateComponents([.month, .year], from: estimate.date)
+            return components.month == month && components.year == year
+        }?.amount
+    }
+}
+
+@Model
+class CategoryEstimate {
+    var id: UUID = UUID()
+    var date: Date // Data representando o mês/ano da estimativa
+    var amount: Double
+    
+    init(date: Date, amount: Double) {
+        self.date = date
+        self.amount = amount
     }
 }
 

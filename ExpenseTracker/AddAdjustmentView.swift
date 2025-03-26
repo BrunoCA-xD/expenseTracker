@@ -62,5 +62,5 @@ struct AddAdjustmentView: View {
         account: nil
         
     ))
-    .modelContainer(for: [Transaction.self, TransactionAdjustment.self], inMemory: true)
+    .modelContainer(for: [Transaction.self, Category.self, Account.self, TransactionAdjustment.self, CategoryEstimate.self], inMemory: true)
 }

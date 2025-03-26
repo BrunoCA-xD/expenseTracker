@@ -28,6 +28,9 @@ struct TransactionDetailView: View {
                 }
                 if let category = transaction.category {
                     Text("Category: \(category.name)")
+                    if let estimate = category.estimateForMonth(month: Calendar.current.component(.month, from: transaction.date), year: Calendar.current.component(.year, from: transaction.date)) {
+                        Text("Monthly Estimate: \(estimate, specifier: "%.2f")")
+                    }
                 }
                 if let account = transaction.account {
                     Text("Account: \(account.name)")
