@@ -111,7 +111,7 @@ struct MonthlyFilterView: View {
                 }
                                 
                 List(viewModel.filteredOccurrences, id: \.date) { occurrence in
-                    NavigationLink(destination: TransactionDetailView(transaction: occurrence.transaction)) {
+                    NavigationLink(destination: TransactionDetailView(transaction: occurrence.transaction, modelContext: modelContext)) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 6) {
@@ -175,25 +175,6 @@ struct MonthlyFilterView: View {
                 viewModel.fetchData()
             }
         }
-    }
-}
-
-// Função auxiliar para criar o ModelContainer para previews
-private func previewModelContainer() -> ModelContainer? {
-    do {
-        let container = try ModelContainer(
-            for:
-                Transaction.self,
-                Category.self,
-                Account.self,
-                TransactionAdjustment.self,
-                CategoryEstimate.self,
-            configurations: .init(isStoredInMemoryOnly: true)
-        )
-        return container
-    } catch {
-        print("Failed to create preview container: \(error)")
-        return nil
     }
 }
 

@@ -5,6 +5,14 @@ enum RecurrenceType: String, Codable {
     case none = "None"
     case monthly = "Monthly"
     case weekly = "Weekly"
+    
+    var description: String {
+        switch self {
+        case .none: return "Sem recorrência"
+        case .monthly: return "Mensal"
+        case .weekly: return "Semanal"
+        }
+    }
 }
 
 @Model

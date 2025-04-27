@@ -2,109 +2,102 @@ import SwiftUI
 import SwiftData
 
 struct TransactionDetailView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) var dismiss
-    let transaction: Transaction
-    @State private var showingAddAdjustment = false
-    @State private var hasEndDate: Bool // Reflete se há endDate
-    @State private var endDate: Date
-    @State private var showingDeleteConfirmation = false
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var viewModel: TransactionDetailViewModel
     
-    init(transaction: Transaction) {
-        self.transaction = transaction
-        self._hasEndDate = State(initialValue: transaction.endDate != nil)
-        self._endDate = State(initialValue: transaction.endDate ?? Date())
+    init(transaction: Transaction, modelContext: ModelContext) {
+        _viewModel = StateObject(wrappedValue: TransactionDetailViewModel(transaction: transaction, modelContext: modelContext))
     }
     
     var body: some View {
         Form {
             Section("Detalhes") {
-                Text("Título: \(transaction.title)")
-                Text("Valor: \(transaction.initialBaseAmount, specifier: "%.2f")")
-                Text("Data: \(transaction.date, style: .date)")
-                Text("Recorrente: \(transaction.isRecurring ? "Sim (\(transaction.recurrenceType.rawValue))" : "Não")")
-                if let installments = transaction.numberOfInstallments {
+                Text("Título: \(viewModel.transaction.title)")
+                Text("Valor: \(viewModel.transaction.initialBaseAmount, specifier: "%.2f")")
+                Text("Data: \(viewModel.transaction.date, style: .date)")
+                Text("Recorrente: \(viewModel.transaction.isRecurring ? "Sim (\(viewModel.transaction.recurrenceType.description))" : "Não")")
+                if let installments = viewModel.transaction.numberOfInstallments {
                     Text("Número de parcelas: \(installments)")
                 }
-                if let category = transaction.category {
+                if let category = viewModel.transaction.category {
                     Text("Categoria: \(category.name)")
-                    if let estimate = category.estimateForMonth(month: Calendar.current.component(.month, from: transaction.date), year: Calendar.current.component(.year, from: transaction.date)) {
+                    if let estimate = viewModel.estimateForMonth(date: viewModel.transaction.date) {
                         Text("Estimativa mensal: \(estimate, specifier: "%.2f")")
                     }
                 }
-                if let account = transaction.account {
+                if let account = viewModel.transaction.account {
                     Text("Conta: \(account.name)")
                 }
             }
             
-            if transaction.isRecurring {
+            if viewModel.transaction.isRecurring {
                 Section("Opções de recorrência") {
-                    Toggle("Definir fim", isOn: $hasEndDate)
-                    if hasEndDate {
-                        DatePicker("Data", selection: $endDate, displayedComponents: .date)
+                    Toggle("Definir fim", isOn: $viewModel.hasEndDate)
+                    if viewModel.hasEndDate {
+                        DatePicker("Data", selection: $viewModel.endDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
-                    }
-                    Button("Salvar data final") {
-                        transaction.endDate = hasEndDate ? endDate : nil
-                        try? modelContext.save()
+                        Button("Salvar data final") {
+                            viewModel.saveEndDate()
+                        }
                     }
                 }
                 
                 Section("Ajustes de valor") {
-                    if transaction.adjustments.isEmpty {
+                    if viewModel.transaction.adjustments.isEmpty {
                         Text("Nenhum ajuste ainda.")
                             .foregroundStyle(.gray)
                     } else {
-                        ForEach(transaction.adjustments.sorted { $0.startDate < $1.startDate }) { adjustment in
+                        ForEach(viewModel.transaction.adjustments.sorted { $0.startDate < $1.startDate }) { adjustment in
                             HStack {
                                 Text(adjustment.startDate, style: .date)
                                 Spacer()
                                 Text("\(adjustment.amount, specifier: "%.2f") \(adjustment.isPermanent ? "(Fixo)" : "(Dessa vez)")")
                             }
                         }
-                        .onDelete(perform: deleteAdjustment)
+                        .onDelete(perform: viewModel.deleteAdjustment)
                     }
                 }
                 Section {
                     Button("Adicionar Ajuste") {
-                        showingAddAdjustment = true
+                        viewModel.showingAddAdjustment = true
                     }
                 }
             }
             Section {
                 Button("Deletar Transação") {
-                    showingDeleteConfirmation = true
+                    viewModel.showingDeleteConfirmation = true
                 }
                 .foregroundStyle(.red)
             }
         }
         .navigationTitle("Detalhes da transação")
-        .sheet(isPresented: $showingAddAdjustment) {
-            AddAdjustmentView(transaction: transaction)
+        .sheet(isPresented: $viewModel.showingAddAdjustment) {
+            AddAdjustmentView(transaction: viewModel.transaction)
         }
         .confirmationDialog(
             "Deletar Transação",
-            isPresented: $showingDeleteConfirmation,
+            isPresented: $viewModel.showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
             Button("Deletar", role: .destructive) {
-                modelContext.delete(transaction)
-                try? modelContext.save()
-                dismiss() // Fecha a view após o feedback
+                viewModel.deleteTransaction()
+                dismiss()
             }
         } message: {
-            Text(transaction.isRecurring ?
-                 "Tem certeza que quer deletar '\(transaction.title)'? Essa transação é recorrente e deletar irá remover ocorrências passadas e futuras." : "Tem certeza que quer deletar '\(transaction.title)'?")
+            Text(viewModel.transaction.isRecurring ?
+                 "Tem certeza que quer deletar '\(viewModel.transaction.title)'? Essa transação é recorrente e deletar irá remover ocorrências passadas e futuras." :
+                 "Tem certeza que quer deletar '\(viewModel.transaction.title)'?")
         }
-        
-        
     }
-    
-    private func deleteAdjustment(at offsets: IndexSet) {
-        for index in offsets {
-            let adjustment = transaction.adjustments.sorted { $0.startDate < $1.startDate }[index]
-            modelContext.delete(adjustment)
-        }
-        try? modelContext.save()
+}
+
+#Preview {
+    if let container = previewModelContainer() {
+        let transaction = Transaction(title: "title", initialBaseAmount: 10, date: Date(), isRecurring: true, recurrenceType: .monthly, numberOfInstallments: 2, endDate: nil, category: nil, account: nil)
+        let viewModel = MonthlyFilterViewModel(modelContext: container.mainContext)
+        TransactionDetailView(transaction: transaction, modelContext: container.mainContext)
+                    .modelContext(container.mainContext)
+    } else {
+        Text("Failed to create preview: ModelContainer initialization failed")
     }
 }

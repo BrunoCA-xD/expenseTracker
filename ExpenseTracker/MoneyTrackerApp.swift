@@ -32,3 +32,22 @@ struct ExpenseTrackerApp: App {
         .environment(\.modelContext, sharedModelContainer.mainContext)
     }
 }
+
+// Função auxiliar para criar o ModelContainer para previews
+func previewModelContainer() -> ModelContainer? {
+    do {
+        let container = try ModelContainer(
+            for:
+                Transaction.self,
+                Category.self,
+                Account.self,
+                TransactionAdjustment.self,
+                CategoryEstimate.self,
+            configurations: .init(isStoredInMemoryOnly: true)
+        )
+        return container
+    } catch {
+        print("Failed to create preview container: \(error)")
+        return nil
+    }
+}
