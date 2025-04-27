@@ -2,136 +2,117 @@ import SwiftUI
 import SwiftData
 
 struct AddTransactionView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) var dismiss
-    @Query private var categories: [Category]
-    @Query private var accounts: [Account]
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var viewModel: AddTransactionViewModel
     
-    @State private var title = ""
-    @State private var initialBaseAmount: Double = 0.0
-    @State private var isIncome = false
-    @State private var date = Date()
-    @State private var isRecurring = false
-    @State private var recurrenceType = RecurrenceType.monthly
-    @State private var numberOfInstallments = ""
-    @State private var selectedCategory: Category? // Opcional, pode ser nil
-    @State private var selectedAccount: Account? // Novo campo para conta
-    @State private var estimatedMonthlyAmount: Double = 0.0
-    @State private var newCategoryName = ""
-    @State private var newAccountName = ""
-    @State private var showingAddCategory = false
-    @State private var showingAddAccount = false
-    @State private var refreshTrigger = UUID() // Força atualização da view
-    
-    private var finalInitialBaseAmount: Double? {
-        let value = isIncome ? initialBaseAmount : -initialBaseAmount
-        return value != 0.0 ? value : nil
+    init(viewModel: AddTransactionViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
     
     var body: some View {
         NavigationStack {
             Form {
-                Section("Transaction Details") {
-                    TextField("Title", text: $title)
-                    CurrencyTextField(value: $initialBaseAmount)
+                Section("Detalhes") {
+                    TextField("Título", text: $viewModel.title)
+                    CurrencyTextField(value: $viewModel.amount)
                     HStack {
-                        Text("Type")
+                        Text("Tipo")
                         Spacer()
-                        Picker("Type", selection: $isIncome) {
-                            Text("Outcome").tag(false)
-                            Text("Income").tag(true)
+                        Picker("Tipo", selection: $viewModel.isIncome) {
+                            Text("Saída").tag(false)
+                            Text("Entrada").tag(true)
                         }.pickerStyle(SegmentedPickerStyle())
                     }
-                    DatePicker("Start Date", selection: $date, displayedComponents: .date)
+                    DatePicker("Data", selection: $viewModel.date, displayedComponents: .date)
+                        .datePickerStyle(.compact)
                 }
                 
-                Section("Recurrence") {
-                    Toggle("Is Recurring", isOn: $isRecurring)
-                    if isRecurring {
-                        Picker("Recurrence Type", selection: $recurrenceType) {
-                            Text("Monthly").tag(RecurrenceType.monthly)
-                            Text("Weekly").tag(RecurrenceType.weekly)
+                Section("Recorrência") {
+                    Toggle("É recorrente", isOn: $viewModel.isRecurring)
+                    if viewModel.isRecurring {
+                        Picker("Frequência", selection: $viewModel.recurrenceType) {
+                            ForEach(RecurrenceType.allCases, id: \.self) { type in
+                                Text(type.description.capitalized).tag(type)
+                            }
                         }
-                        TextField("Number of Installments (leave empty for fixed)", text: $numberOfInstallments)
-                            .keyboardType(.numberPad)
+                        if viewModel.recurrenceType == .monthly {
+                            TextField("Nº de parcelas (caso parcelamento) ", value: $viewModel.numberOfInstallments, format: .number)
+                                .keyboardType(.numberPad)
+                        }
                     }
                 }
                 
-                Section("Category") {
-                    Picker("Category", selection: $selectedCategory) {
-                        Text("None").tag(Category?.none)
-                        ForEach(categories) { category in
+                Section("Categoria") {
+                    Picker("Categoria", selection: $viewModel.selectedCategory) {
+                        Text("Nenhuma").tag(Category?.none)
+                        ForEach(viewModel.categories) { category in
                             Text(category.name).tag(Optional(category))
                         }
                     }
-                    Button("Add New Category") {
-                        showingAddCategory = true
+                    Button("Nova categoria") {
+                        viewModel.showingAddCategory = true
+                    }
+                    if viewModel.categories.isEmpty {
+                        Text("Sem categorias disponíveis.")
+                            .foregroundStyle(.gray)
                     }
                 }
                 
-                Section("Account") {
-                    Picker("Account", selection: $selectedAccount) {
-                        Text("None").tag(nil as Account?)
-                        ForEach(accounts) { account in
-                            Text(account.name).tag(account as Account?)
+                Section("Conta") {
+                    Picker("Conta", selection: $viewModel.selectedAccount) {
+                        Text("Nenhuma").tag(Account?.none)
+                        ForEach(viewModel.accounts) { account in
+                            Text(account.name).tag(Optional(account))
                         }
                     }
-                    Button("Add New Account") {
-                        showingAddAccount = true
+                    Button("Nova Conta") {
+                        viewModel.showingAddAccount = true
+                    }
+                    if viewModel.accounts.isEmpty {
+                        Text("Sem contas disponíveis.")
+                            .foregroundStyle(.gray)
                     }
                 }
             }
-            .navigationTitle("Add Transaction")
+            .navigationTitle("Adicionar Transação")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
-                        saveTransaction()
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Salvar") {
+                        viewModel.saveTransaction()
                         dismiss()
                     }
-                    .disabled(!isValid())
+                    .disabled(!viewModel.isFormValid)
                 }
             }
-            .sheet(isPresented: $showingAddCategory) {
-                AddCategoryView(date: date) { newCategory in
-                    selectedCategory = newCategory // Seleciona a nova categoria
+            .sheet(isPresented: $viewModel.showingAddCategory) {
+                AddCategoryView(date: viewModel.date) { newCategory in
+                    viewModel.selectedCategory = newCategory
+                }
+                .onDisappear {
+                    viewModel.fetchData()
                 }
             }
-            .sheet(isPresented: $showingAddAccount) {
-                AddAccountView { newAccount in
-                    selectedAccount = newAccount // Seleciona a nova conta
+            .sheet(isPresented: $viewModel.showingAddAccount) {
+                AddAccountView() { newAccount in
+                    viewModel.selectedAccount = newAccount
+                }
+                .onDisappear {
+                    viewModel.fetchData()
                 }
             }
         }
     }
-    
-    private func saveTransaction() {
-        guard let amountValue = finalInitialBaseAmount else { return }
-        let installments = Int(numberOfInstallments) ?? nil
-        
-        let newTransaction = Transaction(
-            title: title,
-            initialBaseAmount: amountValue,
-            date: date,
-            isRecurring: isRecurring,
-            recurrenceType: isRecurring ? recurrenceType : .none,
-            numberOfInstallments: installments,
-            endDate: nil,
-            category: selectedCategory,
-            account: selectedAccount
-        )
-        modelContext.insert(newTransaction)
-        try? modelContext.save()
-    }
-    
-    private func isValid() -> Bool {
-        !title.isEmpty && initialBaseAmount != 0 && (!isRecurring || numberOfInstallments.isEmpty || Int(numberOfInstallments) != nil)
-    }
 }
 
 #Preview {
-    AddTransactionView()
-        .modelContainer(for: [Transaction.self, Category.self, Account.self, TransactionAdjustment.self, CategoryEstimate.self], inMemory: true)
+    if let container = previewModelContainer() {
+        let viewModel = AddTransactionViewModel(modelContext: container.mainContext)
+        AddTransactionView(viewModel: viewModel)
+            .modelContext(container.mainContext)
+    } else {
+        Text("Failed to create preview#")
+    }
 }

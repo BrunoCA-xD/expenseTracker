@@ -15,7 +15,11 @@ struct TransactionDetailView: View {
                 Text("Título: \(viewModel.transaction.title)")
                 Text("Valor: \(viewModel.transaction.initialBaseAmount, specifier: "%.2f")")
                 Text("Data: \(viewModel.transaction.date, style: .date)")
-                Text("Recorrente: \(viewModel.transaction.isRecurring ? "Sim (\(viewModel.transaction.recurrenceType.description))" : "Não")")
+                if viewModel.transaction.isRecurring {
+                    Text("Recorrente: Sim (\(viewModel.transaction.recurrenceType.description))")
+                } else {
+                    Text("Recorrente: Não")
+                }
                 if let installments = viewModel.transaction.numberOfInstallments {
                     Text("Número de parcelas: \(installments)")
                 }

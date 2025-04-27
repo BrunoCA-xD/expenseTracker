@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-enum RecurrenceType: String, Codable {
+enum RecurrenceType: String, Codable, CaseIterable {
     case none = "None"
     case monthly = "Monthly"
     case weekly = "Weekly"

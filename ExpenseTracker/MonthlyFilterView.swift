@@ -169,7 +169,7 @@ struct MonthlyFilterView: View {
             .sheet(isPresented: $viewModel.showingAddTransaction, onDismiss: {
                 viewModel.fetchData()
             }) {
-                AddTransactionView()
+                AddTransactionView(viewModel: .init(modelContext: modelContext))
             }
             .onAppear {
                 viewModel.fetchData()
