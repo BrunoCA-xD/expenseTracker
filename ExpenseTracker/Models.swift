@@ -33,59 +33,45 @@ class Transaction {
         self.account = account
     }
     
-    // Calcula ocorrências para o mês considerando ajustes
-    func occurrencesForMonth(month: Int, year: Int) -> [(date: Date, amount: Double)] {
-        let calendar = Calendar.current
-        var occurrences: [(Date, Double)] = []
-        
-        if !isRecurring || recurrenceType == .none {
-            let components = calendar.dateComponents([.month, .year], from: date)
-            if components.month == month && components.year == year {
-                let amount = getAmount(for: date)
-                return [(date: date, amount: amount)]
+    func occurrencesForPeriod(startDate: Date, endDate: Date) -> [(date: Date, amount: Double)] {
+            let calendar = Calendar.current
+            var occurrences: [(Date, Double)] = []
+            
+            if !isRecurring || recurrenceType == .none {
+                if date >= startDate && date <= endDate {
+                    let amount = getAmount(for: date)
+                    occurrences.append((date: date, amount: amount))
+                }
+            } else {
+                var currentDate = date
+                let maxOccurrences = numberOfInstallments ?? Int.max
+                var occurrenceCount = 0
+                
+                while occurrenceCount < maxOccurrences && currentDate <= endDate {
+                    if currentDate >= startDate {
+                        let amount = getAmount(for: currentDate)
+                        occurrences.append((date: currentDate, amount: amount))
+                    }
+                    switch recurrenceType {
+                    case .monthly:
+                        guard let nextDate = calendar.date(byAdding: .month, value: 1, to: currentDate) else { break }
+                        currentDate = nextDate
+                    case .weekly:
+                        guard let nextDate = calendar.date(byAdding: .weekOfYear, value: 1, to: currentDate) else { break }
+                        currentDate = nextDate
+                    case .none:
+                        break
+                    }
+                    occurrenceCount += 1
+                    if currentDate > endDate { break }
+                }
             }
-            return []
+            
+            return occurrences
         }
-        
-        var currentDate = date
-        let maxOccurrences = numberOfInstallments ?? Int.max
-        var occurrenceCount = 0
-        
-        while occurrenceCount < maxOccurrences {
-            if let end = endDate, currentDate > end {
-                break
-            }
-            
-            let components = calendar.dateComponents([.month, .year], from: currentDate)
-            guard let occurrenceMonth = components.month, let occurrenceYear = components.year else { break }
-            
-            if occurrenceYear > year || (occurrenceYear == year && occurrenceMonth > month) {
-                break
-            }
-            
-            if occurrenceMonth == month && occurrenceYear == year {
-                let amount = getAmount(for: currentDate)
-                occurrences.append((date: currentDate, amount: amount))
-            }
-            
-            switch recurrenceType {
-            case .monthly:
-                guard let nextDate = calendar.date(byAdding: .month, value: 1, to: currentDate) else { break }
-                currentDate = nextDate
-            case .weekly:
-                guard let nextDate = calendar.date(byAdding: .weekOfYear, value: 1, to: currentDate) else { break }
-                currentDate = nextDate
-            case .none:
-                break
-            }
-            occurrenceCount += 1
-        }
-        
-        return occurrences
-    }
     
     // Determina o valor para uma data específica
-    private func getAmount(for date: Date) -> Double {
+    func getAmount(for date: Date) -> Double {
         let calendar = Calendar.current
         let sortedAdjustments = adjustments.sorted { $0.startDate < $1.startDate }
         
