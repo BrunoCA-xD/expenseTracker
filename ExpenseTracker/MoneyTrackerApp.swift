@@ -3,10 +3,22 @@ import SwiftData
 
 @main
 struct ExpenseTrackerApp: App {
+    var sharedModelContainer: ModelContainer = {
+        do {
+            return try ModelContainer(for: Transaction.self,
+                                      Category.self,
+                                      Account.self,
+                                      TransactionAdjustment.self,
+                                      CategoryEstimate.self, configurations: .init(isStoredInMemoryOnly: false))
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
+    
     var body: some Scene {
         WindowGroup {
             TabView {
-                MonthlyFilterView()
+                MonthlyFilterView(viewModel: .init(modelContext: sharedModelContainer.mainContext))
                     .tabItem {
                         Label("Tracker", systemImage: "dollarsign.circle")
                     }
@@ -16,7 +28,7 @@ struct ExpenseTrackerApp: App {
                         Label("Data", systemImage: "gear")
                     }
             }
-            .modelContainer(for: [Transaction.self, Category.self, Account.self, TransactionAdjustment.self, CategoryEstimate.self])
         }
+        .environment(\.modelContext, sharedModelContainer.mainContext)
     }
 }
