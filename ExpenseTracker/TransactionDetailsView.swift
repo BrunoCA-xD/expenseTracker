@@ -18,85 +18,85 @@ struct TransactionDetailView: View {
     
     var body: some View {
         Form {
-            Section("Details") {
-                Text("Title: \(transaction.title)")
-                Text("Initial Base Amount: \(transaction.initialBaseAmount, specifier: "%.2f")")
-                Text("Date: \(transaction.date, style: .date)")
-                Text("Recurring: \(transaction.isRecurring ? "Yes (\(transaction.recurrenceType.rawValue))" : "No")")
+            Section("Detalhes") {
+                Text("Título: \(transaction.title)")
+                Text("Valor: \(transaction.initialBaseAmount, specifier: "%.2f")")
+                Text("Data: \(transaction.date, style: .date)")
+                Text("Recorrente: \(transaction.isRecurring ? "Sim (\(transaction.recurrenceType.rawValue))" : "Não")")
                 if let installments = transaction.numberOfInstallments {
-                    Text("Number of Installments: \(installments)")
+                    Text("Número de parcelas: \(installments)")
                 }
                 if let category = transaction.category {
-                    Text("Category: \(category.name)")
+                    Text("Categoria: \(category.name)")
                     if let estimate = category.estimateForMonth(month: Calendar.current.component(.month, from: transaction.date), year: Calendar.current.component(.year, from: transaction.date)) {
-                        Text("Monthly Estimate: \(estimate, specifier: "%.2f")")
+                        Text("Estimativa mensal: \(estimate, specifier: "%.2f")")
                     }
                 }
                 if let account = transaction.account {
-                    Text("Account: \(account.name)")
+                    Text("Conta: \(account.name)")
                 }
             }
             
             if transaction.isRecurring {
-                Section("Recurrence Options") {
-                    Toggle("Set End Date", isOn: $hasEndDate)
+                Section("Opções de recorrência") {
+                    Toggle("Definir fim", isOn: $hasEndDate)
                     if hasEndDate {
-                        DatePicker("End Date", selection: $endDate, displayedComponents: .date)
+                        DatePicker("Data", selection: $endDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
-                    Button("Save End Date") {
+                    Button("Salvar data final") {
                         transaction.endDate = hasEndDate ? endDate : nil
                         try? modelContext.save()
                     }
                 }
                 
-                Section("Adjustments") {
+                Section("Ajustes de valor") {
                     if transaction.adjustments.isEmpty {
-                        Text("No adjustments yet.")
+                        Text("Nenhum ajuste ainda.")
                             .foregroundStyle(.gray)
                     } else {
                         ForEach(transaction.adjustments.sorted { $0.startDate < $1.startDate }) { adjustment in
                             HStack {
                                 Text(adjustment.startDate, style: .date)
                                 Spacer()
-                                Text("\(adjustment.amount, specifier: "%.2f") \(adjustment.isPermanent ? "(Permanent)" : "(One-Time)")")
+                                Text("\(adjustment.amount, specifier: "%.2f") \(adjustment.isPermanent ? "(Fixo)" : "(Dessa vez)")")
                             }
                         }
                         .onDelete(perform: deleteAdjustment)
                     }
                 }
                 Section {
-                    Button("Add Adjustment") {
+                    Button("Adicionar Ajuste") {
                         showingAddAdjustment = true
                     }
                 }
             }
             Section {
-                Button("Delete Transaction") {
+                Button("Deletar Transação") {
                     showingDeleteConfirmation = true
                 }
                 .foregroundStyle(.red)
             }
         }
-        .navigationTitle("Transaction Details")
+        .navigationTitle("Detalhes da transação")
         .sheet(isPresented: $showingAddAdjustment) {
             AddAdjustmentView(transaction: transaction)
         }
         .confirmationDialog(
-            "Delete Transaction",
+            "Deletar Transação",
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Delete", role: .destructive) {
+            Button("Deletar", role: .destructive) {
                 modelContext.delete(transaction)
                 try? modelContext.save()
                 dismiss() // Fecha a view após o feedback
             }
         } message: {
             Text(transaction.isRecurring ?
-                 "Are you sure you want to delete '\(transaction.title)'? This is a recurring transaction and will remove all future occurrences." :
-                    "Are you sure you want to delete '\(transaction.title)'?")
+                 "Tem certeza que quer deletar '\(transaction.title)'? Essa transação é recorrente e deletar irá remover ocorrências passadas e futuras." : "Tem certeza que quer deletar '\(transaction.title)'?")
         }
+        
         
     }
     
