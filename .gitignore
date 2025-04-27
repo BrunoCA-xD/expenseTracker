@@ -1,0 +1,101 @@
+# Xcode
+#
+# Ignora arquivos de build, caches, e configurações específicas do usuário
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.playground/**/timeline.xctimeline
+DerivedData/
+build/
+*.pbxproj.bak
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager
+#
+# Ignora dependências e arquivos de build do SPM
+.build/
+Packages/
+*.swiftdoc
+*.swiftmodule
+*.swiftsourceinfo
+Package.resolved
+
+# macOS
+#
+# Ignora arquivos gerados pelo macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Arquivos de compilação e temporários
+#
+# Ignora arquivos de compilação e caches
+*.o
+*.swp
+*~
+*.a
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM/
+*.framework/
+*.appex/
+*.xcarchive/
+*.xctest/
+
+# Arquivos de configuração sensíveis
+#
+# Ignora arquivos que podem conter chaves de API ou configurações locais
+*.xcconfig
+*.plist
+*.p12
+*.pem
+*.cer
+*.mobileprovision
+Secrets.swift
+Keys.swift
+Config.swift
+.env
+*.secret
+*.private
+
+# Logs e caches
+#
+# Ignora logs e caches gerados pela aplicação
+*.log
+*.log.*
+*.cache
+*.tmp
+*.bak
+
+# Outros
+#
+# Ignora arquivos temporários ou irrelevantes
+Thumbs.db
+*.swp
+*.swo
+*.orig
+*.rej
+*.patch
+*.diff
+
+# Pastas específicas do projeto
+#
+# Ignora pastas que podem ser usadas para testes ou builds locais
+/Pods/              # Caso venha a usar CocoaPods no futuro
+/Carthage/          # Caso venha a usar Carthage no futuro
+/fastlane/report.xml # Caso use Fastlane
+/test_output/       # Saída de testes
+/coverage/          # Relatórios de cobertura de código
+
+# Exceções
+#
+# Garante que arquivos importantes sejam versionados
+!.gitignore
+!README.md
+!LICENSE
